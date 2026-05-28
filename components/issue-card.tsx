@@ -221,7 +221,7 @@ export function IssueCard({ issue, readonly = false, variant = "issue" }: Props)
         {!readonly && !isImprovement && (
           <div className="px-5 py-3 bg-muted/40 border-t flex items-center gap-2 flex-wrap">
             <Button size="sm" className="h-8 text-xs" onClick={() => setActionOpen("working")}>
-              Working
+              Working on it
             </Button>
             <Button
               size="sm"

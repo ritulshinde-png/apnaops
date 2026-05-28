@@ -61,9 +61,29 @@ function ISTClock({ now }: { now: Date }) {
 
 const STATUS_ORDER: Record<"live" | "upcoming" | "over", number> = { live: 0, upcoming: 1, over: 2 };
 
+// "HH:MM" -> minutes since midnight, for sort comparisons.
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map((n) => Number(n) || 0);
+  return h * 60 + m;
+}
+
 function StandupCarousel({ standups }: { standups: Standup[] }) {
   const sorted = React.useMemo(
-    () => [...standups].sort((a, b) => STATUS_ORDER[getStandupStatus(a).kind] - STATUS_ORDER[getStandupStatus(b).kind]),
+    () =>
+      [...standups].sort((a, b) => {
+        // 1) Group by status: live / upcoming first, completed last.
+        const sa = STATUS_ORDER[getStandupStatus(a).kind];
+        const sb = STATUS_ORDER[getStandupStatus(b).kind];
+        if (sa !== sb) return sa - sb;
+        // 2) Within a group, ascending by start time.
+        //    All standups share a fixed 30-min duration, so this also gives
+        //    "ascending in which got over first" for the completed group.
+        const ta = timeToMinutes(a.time);
+        const tb = timeToMinutes(b.time);
+        if (ta !== tb) return ta - tb;
+        // 3) Same time → tiebreak by meeting title ascending.
+        return a.name.localeCompare(b.name);
+      }),
     [standups]
   );
 

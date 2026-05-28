@@ -41,7 +41,7 @@ export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, cu
       <div className="flex items-center justify-between border-t -mx-4 px-3 pt-2 -mb-1">
         <Select value={statType} onValueChange={(v) => setStatType(v as StatType)}>
           <SelectTrigger
-            className="h-7 text-sm font-semibold text-foreground gap-1 border-0 shadow-none px-1.5 hover:bg-accent focus:ring-0 focus:ring-offset-0 w-auto [&>svg]:opacity-60"
+            className="h-7 text-xs font-medium text-foreground gap-1 border-0 shadow-none px-1.5 hover:bg-accent focus:ring-0 focus:ring-offset-0 w-auto [&>svg]:opacity-60"
           >
             <SelectValue />
           </SelectTrigger>

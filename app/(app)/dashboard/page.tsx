@@ -256,8 +256,8 @@ export default function DashboardPage() {
         subtitle={`Location × metric grid · Δ vs ${compareLabel} · click any metric value for its trend · click flag for issues`}
         actions={
           <>
-            <Button variant="outline" onClick={exportCsv}>Export CSV</Button>
-            <Button onClick={tryReload}>Reload</Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportCsv}>Export CSV</Button>
+            <Button size="sm" className="h-8 text-xs" onClick={tryReload}>Reload</Button>
           </>
         }
       />
@@ -300,17 +300,17 @@ export default function DashboardPage() {
         <button
           onClick={() => setDashFilter("myMetrics", !filters.myMetrics)}
           className={cn(
-            "px-3 py-1.5 rounded-full text-[12.5px] font-medium border transition-colors",
+            "h-8 px-3 rounded-full text-xs font-medium border transition-colors",
             filters.myMetrics ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-secondary text-foreground"
           )}
         >My Metrics</button>
-        <div className="inline-flex border rounded-md overflow-hidden h-9">
+        <div className="inline-flex border rounded-md overflow-hidden h-8">
           {(["all", "issues", "good"] as const).map((opt, i) => (
             <button
               key={opt}
               onClick={() => setDashFilter("statusFilter", opt)}
               className={cn(
-                "px-3.5 text-[12.5px] font-medium transition-colors",
+                "px-3 text-xs font-medium transition-colors",
                 filters.statusFilter === opt
                   ? opt === "issues" ? "bg-destructive/15 text-destructive font-semibold"
                   : opt === "good" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold"
@@ -358,7 +358,7 @@ export default function DashboardPage() {
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={cn("px-3 py-1.5 rounded-full text-[12.5px] font-medium border transition-colors", active ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-secondary text-foreground")}>{children}</button>
+    <button onClick={onClick} className={cn("h-8 px-3 rounded-full text-xs font-medium border transition-colors", active ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:bg-secondary text-foreground")}>{children}</button>
   );
 }
 
