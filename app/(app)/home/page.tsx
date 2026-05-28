@@ -12,6 +12,20 @@ import { METRIC_KEYS, type MetricDef } from "@/lib/metric-data";
 import { getStandupStatus, isStandupToday } from "@/lib/standup";
 import { cn } from "@/lib/utils";
 import type { Standup } from "@/lib/types";
+import { MetricTrendCard } from "@/components/metric-trend-card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  TIME_RANGE_OPTIONS,
+  BREAKDOWN_OPTIONS,
+  getAllowedBreakdowns,
+  formatDateDdMmYyyy,
+  type TimeRange,
+  type Breakdown,
+  type CustomRange,
+} from "@/lib/metric-trend";
 
 function useISTClock() {
   const [now, setNow] = React.useState(() => new Date());
@@ -174,10 +188,64 @@ export default function HomePage() {
   const standups = useAppStore((s) => s.standups);
   const locations = useAppStore((s) => s.locations);
   const data = useAppStore((s) => s.data);
-  const actionables = useAppStore((s) => s.actionables);
   const metrics = useAppStore((s) => s.metrics);
   const roles = useAppStore((s) => s.roles);
+  const [timeRange, setTimeRange] = React.useState<TimeRange>("last7");
+  const [breakdown, setBreakdown] = React.useState<Breakdown>("daily");
+  const [customRange, setCustomRange] = React.useState<CustomRange | null>(null);
+  const [customDialogOpen, setCustomDialogOpen] = React.useState(false);
+  const [draftStart, setDraftStart] = React.useState("");
+  const [draftEnd, setDraftEnd] = React.useState("");
+  const [draftError, setDraftError] = React.useState("");
   if (!user) return null;
+
+  const allowedBreakdowns = getAllowedBreakdowns(timeRange, customRange);
+
+  function changeRange(r: TimeRange) {
+    if (r === "custom") {
+      const today = new Date();
+      const aWeekAgo = new Date(today);
+      aWeekAgo.setDate(aWeekAgo.getDate() - 6);
+      const toIso = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      setDraftStart(customRange ? toIso(customRange.start) : toIso(aWeekAgo));
+      setDraftEnd(customRange ? toIso(customRange.end) : toIso(today));
+      setDraftError("");
+      setCustomDialogOpen(true);
+      return;
+    }
+    setTimeRange(r);
+    const allowed = getAllowedBreakdowns(r);
+    if (!allowed.includes(breakdown)) setBreakdown(allowed[0]);
+  }
+
+  function applyCustomRange() {
+    if (!draftStart || !draftEnd) {
+      setDraftError("Both start and end dates are required.");
+      return;
+    }
+    const start = new Date(draftStart);
+    const end = new Date(draftEnd);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setDraftError("Invalid date.");
+      return;
+    }
+    if (end < start) {
+      setDraftError("End date must be on or after start date.");
+      return;
+    }
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000));
+    if (days > 365) {
+      setDraftError("Custom range can be at most 365 days.");
+      return;
+    }
+    const next: CustomRange = { start, end };
+    setCustomRange(next);
+    setTimeRange("custom");
+    const allowed = getAllowedBreakdowns("custom", next);
+    if (!allowed.includes(breakdown)) setBreakdown(allowed[0]);
+    setCustomDialogOpen(false);
+  }
 
   const myIssues = (() => {
     if (user.accessLevel === "owner" || user.accessLevel === "admin") return issues;
@@ -201,7 +269,17 @@ export default function HomePage() {
   const pendingStandups = todaysStandups.filter((s) => getStandupStatus(s).kind !== "over").length;
   const completedStandups = todaysStandups.length - pendingStandups;
 
-  const activeMetrics = metrics.filter((m) => m.active).slice(0, 3);
+  const userRole = roles.find((r) => r.name === user.role);
+  const ownedMetricNames = new Set(userRole?.metrics || []);
+  const myMappedMetrics = metrics
+    .filter((m) => m.active && ownedMetricNames.has(m.name))
+    .map((m) => {
+      const def: MetricDef | undefined =
+        METRIC_KEYS.find((k) => k.ownerName === m.name) ||
+        METRIC_KEYS.find((k) => m.name.toLowerCase().startsWith(k.ownerName.toLowerCase().split(" ")[0]));
+      return def ? { id: m.id, name: m.name, def } : null;
+    })
+    .filter((x): x is { id: string; name: string; def: MetricDef } => x !== null);
   const userLocData = data[user.geoType === "City" ? "JH_ranchi" : "global"] || data.global || {};
 
   const stores = Object.keys(locations).filter((id) => locations[id].type === "Store").length;
@@ -225,31 +303,92 @@ export default function HomePage() {
       )}
 
       <section className="mb-7">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">My Metrics</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {activeMetrics.map((m: { name: string; id: string }) => {
-            const def: MetricDef | undefined = METRIC_KEYS.find((k) => k.ownerName === m.name) || METRIC_KEYS.find((k) => m.name.toLowerCase().startsWith(k.ownerName.toLowerCase().split(" ")[0]));
-            const cell = def ? userLocData[def.key] : null;
-            const val = cell ? cell[0] : "—";
-            const delta = cell ? cell[2] : 0;
-            const positive = def && cell ? (def.isHigherBetter ? delta > 0 : delta < 0) : false;
-            return (
-              <Card key={m.id} className="p-4">
-                <p className="text-xs text-muted-foreground font-medium mb-1.5">{m.name}</p>
-                <p className="text-2xl font-semibold tracking-tight tabular-nums">{val}{val === "—" ? "" : def?.unit || ""}</p>
-                {cell && delta !== 0 ? (
-                  <p className={`text-[11px] mt-1 font-medium ${positive ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>{delta > 0 ? "+" : ""}{delta}pp vs yest</p>
-                ) : <p className="text-[11px] mt-1 text-muted-foreground">—</p>}
-              </Card>
-            );
-          })}
-          <Card className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1.5">Open actionables</p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums">{actionables.length}</p>
-            <p className="text-[11px] mt-1 text-muted-foreground">2 due today</p>
-          </Card>
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">My Metrics</h2>
+          <div className="flex items-center gap-2">
+            <Select value={timeRange} onValueChange={(v) => changeRange(v as TimeRange)}>
+              <SelectTrigger className="h-8 text-xs w-auto gap-1.5 px-2.5">
+                {timeRange === "custom" && customRange ? (
+                  <span className="tabular-nums">
+                    {formatDateDdMmYyyy(customRange.start)} – {formatDateDdMmYyyy(customRange.end)}
+                  </span>
+                ) : (
+                  <SelectValue />
+                )}
+              </SelectTrigger>
+              <SelectContent align="end">
+                {TIME_RANGE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={breakdown} onValueChange={(v) => setBreakdown(v as Breakdown)}>
+              <SelectTrigger className="h-8 text-xs w-auto gap-1.5 px-2.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {BREAKDOWN_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    disabled={!allowedBreakdowns.includes(opt.value)}
+                    className="text-xs"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+        {myMappedMetrics.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No metrics mapped to your role yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {myMappedMetrics.map((m) => {
+              const cell = userLocData[m.def.key];
+              const baseline = cell ? cell[0] : m.def.key === "surge" || m.def.key === "pickerDrop" ? 10 : 95;
+              const amp = Math.max(0.5, Math.abs(baseline) * 0.04);
+              return (
+                <MetricTrendCard
+                  key={m.id}
+                  name={m.name}
+                  def={m.def}
+                  baseline={baseline}
+                  amp={amp}
+                  range={timeRange}
+                  breakdown={breakdown}
+                  custom={timeRange === "custom" ? customRange : null}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
+
+      <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Custom date range</DialogTitle>
+            <DialogDescription>Pick a start and end date for the metrics view. Max 365 days.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="custom-start" className="text-xs">Start date</Label>
+              <Input id="custom-start" type="date" value={draftStart} onChange={(e) => setDraftStart(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="custom-end" className="text-xs">End date</Label>
+              <Input id="custom-end" type="date" value={draftEnd} onChange={(e) => setDraftEnd(e.target.value)} />
+            </div>
+          </div>
+          {draftError && <p className="text-xs text-destructive">{draftError}</p>}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCustomDialogOpen(false)}>Cancel</Button>
+            <Button onClick={applyCustomRange}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">

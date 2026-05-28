@@ -30,6 +30,8 @@ export function AppSidebar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [confirmLogout, setConfirmLogout] = React.useState(false);
+  const pendingCollapseRef = React.useRef(false);
+  const asideRef = React.useRef<HTMLElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const user = useCurrentUser();
@@ -43,6 +45,23 @@ export function AppSidebar() {
   const canSeeSetup = user?.accessLevel === "owner" || user?.accessLevel === "admin";
   const initials = user ? user.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() : "?";
 
+  // Collapse on any click outside the sidebar.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      const t = e.target as Node | null;
+      if (!t) return;
+      if (asideRef.current && asideRef.current.contains(t)) return;
+      // Ignore clicks inside floating UI rendered in a portal (dialogs, popovers).
+      const el = t as HTMLElement;
+      if (el.closest?.("[role='dialog'],[data-radix-popper-content-wrapper]")) return;
+      setIsOpen(false);
+      pendingCollapseRef.current = false;
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [isOpen]);
+
   function doLogout() {
     setConfirmLogout(false);
     setSettingsOpen(false);
@@ -53,11 +72,22 @@ export function AppSidebar() {
   return (
     <>
       <aside
+        ref={asideRef}
         onClick={(e) => {
-          if (isOpen) return;
           const t = e.target as HTMLElement;
+          if (isOpen) {
+            // Clicked a nav tile while expanded → collapse once the cursor leaves.
+            if (t.closest("a")) pendingCollapseRef.current = true;
+            return;
+          }
           if (t.closest("a") || t.closest("button")) return;
           setIsOpen(true);
+        }}
+        onMouseLeave={() => {
+          if (pendingCollapseRef.current) {
+            pendingCollapseRef.current = false;
+            setIsOpen(false);
+          }
         }}
         className={cn(
           "fixed top-0 left-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col z-50 px-1.5 py-3 transition-[width] duration-300 ease-in-out",
@@ -252,12 +282,12 @@ function CollapsedTooltip({ label, suppress }: { label: string; suppress?: boole
       <svg
         aria-hidden="true"
         width="7"
-        height="14"
-        viewBox="0 0 7 14"
+        height="12"
+        viewBox="0 0 7 12"
         className="absolute right-full top-1/2 -translate-y-1/2 mr-[-0.5px] text-foreground"
       >
         <path
-          d="M7 1 Q5.5 1 4.5 2 L1 6 Q0 7 1 8 L4.5 12 Q5.5 13 7 13 Z"
+          d="M6.5 0V12L0.385799 6.7593C-0.0798122 6.3602 -0.0798122 5.6398 0.385799 5.2407L6.5 0Z"
           fill="currentColor"
         />
       </svg>
