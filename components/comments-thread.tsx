@@ -41,15 +41,13 @@ export function CommentsThread({ issue }: { issue: Issue }) {
 
   return (
     <div className="border-t">
-      <button onClick={() => toggleComments(issue.id)} className="flex items-center gap-2 px-5 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
+      <button onClick={() => toggleComments(issue.id)} className="flex items-center gap-2 px-5 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
         <ChevronRight className={cn("h-3 w-3 transition-transform", isOpen && "rotate-90")} />
         <span className="font-medium">{count} comment{count === 1 ? "" : "s"}</span>
       </button>
       {isOpen && (
         <div className="px-5 pb-4">
-          {issue.comments.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-1">No comments yet — start the thread.</p>
-          ) : (
+          {issue.comments.length > 0 && (
             <div className="flex flex-col gap-3 mb-3">
               {issue.comments.map((c) => {
                 const isAuthor = c.userId === user?.id;
@@ -60,11 +58,11 @@ export function CommentsThread({ issue }: { issue: Issue }) {
                   <div key={c.id} className="flex gap-2.5 items-start group">
                     <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px] bg-muted">{c.userName.slice(0, 1).toUpperCase()}</AvatarFallback></Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                        <div className="flex items-center gap-1.5"><b className="text-foreground text-[12.5px] font-semibold">{c.userName}</b><span>·</span><span>{c.ts}</span>{c.edited && <span className="italic ml-1">(edited)</span>}</div>
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground leading-tight">
+                        <div className="flex items-center gap-1.5"><b className="text-foreground text-[12.5px] font-semibold">{c.userName}</b><span>·</span><span>{c.ts}</span>{c.edited && <span>(edited)</span>}</div>
                         <div className="flex gap-0.5 shrink-0">
-                          {isAuthor && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEdit(c)} title="Edit"><Pencil className="h-3 w-3" /></Button>}
-                          {canDelete && <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-destructive" onClick={() => removeComment(c.id)} title="Delete"><Trash2 className="h-3 w-3" /></Button>}
+                          {isAuthor && <Button variant="ghost" size="icon" className="h-5 w-5 [&_svg]:size-3" onClick={() => startEdit(c)} title="Edit"><Pencil /></Button>}
+                          {canDelete && <Button variant="ghost" size="icon" className="h-5 w-5 [&_svg]:size-3 hover:text-destructive" onClick={() => removeComment(c.id)} title="Delete"><Trash2 /></Button>}
                         </div>
                       </div>
                       {editing ? (
@@ -76,7 +74,7 @@ export function CommentsThread({ issue }: { issue: Issue }) {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-[13px] mt-0.5 leading-relaxed text-foreground break-words" dangerouslySetInnerHTML={{ __html: c.text.replace(/@([A-Za-z][\w ]+?)(?=$|[,.;:!?\n])/g, '<span class="bg-primary/15 text-primary px-1 rounded font-medium">@$1</span>') }} />
+                        <p className="text-[13px] leading-snug text-foreground break-words" dangerouslySetInnerHTML={{ __html: c.text.replace(/@([A-Za-z][\w ]+?)(?=$|[,.;:!?\n])/g, '<span class="bg-primary/15 text-primary px-1 rounded font-medium">@$1</span>') }} />
                       )}
                     </div>
                   </div>
@@ -84,10 +82,10 @@ export function CommentsThread({ issue }: { issue: Issue }) {
               })}
             </div>
           )}
-          <div className="flex gap-2">
-            <Avatar className="h-9 w-9"><AvatarFallback className="text-[10px] bg-muted">{user?.name?.[0] || "?"}</AvatarFallback></Avatar>
-            <Input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Write a comment… use @ to mention" className="flex-1" />
-            <Button onClick={send} disabled={!text.trim()}>Send</Button>
+          <div className="flex gap-2 items-center">
+            <Avatar className="h-8 w-8"><AvatarFallback className="text-[10px] bg-muted">{user?.name?.[0] || "?"}</AvatarFallback></Avatar>
+            <Input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Write a comment… use @ to mention" className="flex-1 h-8 text-xs" />
+            <Button size="sm" className="h-8" onClick={send} disabled={!text.trim()}>Send</Button>
           </div>
         </div>
       )}

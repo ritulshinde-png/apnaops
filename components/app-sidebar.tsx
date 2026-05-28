@@ -271,27 +271,52 @@ function SectionLabel({ isOpen, label, chip, first }: { isOpen: boolean; label: 
   );
 }
 
+function measureLabelPx(label: string): number {
+  if (typeof document === "undefined") return label.length * 7;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return label.length * 7;
+  ctx.font = '500 12px Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  return Math.ceil(ctx.measureText(label).width);
+}
+
 function CollapsedTooltip({ label, suppress }: { label: string; suppress?: boolean }) {
+  const w = React.useMemo(
+    () => Math.max(56, measureLabelPx(label) + 34), // 34 = px-[17px] both sides
+    [label]
+  );
+
+  // Figma path uses 80-wide reference. Substitute the right-edge coordinates so the
+  // shape stretches to fit any label width while keeping the arrow + rounded corners
+  // pixel-identical to the design.
+  const path =
+    `M${w - 6} 2H12.2038C9.21787 2 6.68635 4.19558 6.26408 7.15147` +
+    `L6.10876 8.23871C6.03875 8.72875 5.7895 9.17541 5.40923 9.49231` +
+    `L0.921865 13.2318C0.442111 13.6316 0.44211 14.3684 0.921865 14.7682` +
+    `L5.40922 18.5077C5.7895 18.8246 6.03875 19.2712 6.10876 19.7613` +
+    `L6.26408 20.8485C6.68635 23.8044 9.21787 26 12.2038 26H${w - 6}` +
+    `C${w - 2.6863} 26 ${w} 23.3137 ${w} 20V8C${w} 4.68629 ${w - 2.6863} 2 ${w - 6} 2Z`;
+
   return (
     <span
       className={cn(
-        "pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2.5 z-[200] whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-[12px] font-medium text-background shadow-lg transition-opacity duration-150",
+        "pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-1 z-[200] whitespace-nowrap transition-opacity duration-150",
         suppress ? "opacity-0" : "opacity-0 group-hover:opacity-100"
       )}
+      style={{ width: w, height: 28 }}
     >
       <svg
         aria-hidden="true"
-        width="7"
-        height="12"
-        viewBox="0 0 7 12"
-        className="absolute right-full top-1/2 -translate-y-1/2 mr-[-0.5px] text-foreground"
+        width={w}
+        height={28}
+        viewBox={`0 0 ${w} 28`}
+        className="absolute inset-0 text-foreground"
       >
-        <path
-          d="M6.5 0V12L0.385799 6.7593C-0.0798122 6.3602 -0.0798122 5.6398 0.385799 5.2407L6.5 0Z"
-          fill="currentColor"
-        />
+        <path d={path} fill="currentColor" />
       </svg>
-      <span className="relative">{label}</span>
+      <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center h-7 px-[17px] text-background text-[12px] font-medium">
+        {label}
+      </span>
     </span>
   );
 }

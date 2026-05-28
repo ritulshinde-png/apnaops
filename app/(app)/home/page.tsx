@@ -248,10 +248,11 @@ export default function HomePage() {
   }
 
   const myIssues = (() => {
-    if (user.accessLevel === "owner" || user.accessLevel === "admin") return issues;
+    const visible = issues.filter((i) => i.severity !== "ok");
+    if (user.accessLevel === "owner" || user.accessLevel === "admin") return visible;
     const role = roles.find((r) => r.name === user.role);
     const owned = new Set(role?.metrics || []);
-    return issues.filter((i) => {
+    return visible.filter((i) => {
       const inMetrics = owned.has(i.metric) || METRIC_KEYS.some((k) => k.ownerName === i.metric && owned.has(k.ownerName));
       if (!inMetrics) return false;
       if (user.geoType === "Global" || !user.geoType) return true;
@@ -391,14 +392,52 @@ export default function HomePage() {
       </Dialog>
 
       <section>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          {myIssues.length} issues flagged for you
-        </h2>
-        {myIssues.length === 0 ? (
-          <EmptyState icon={Sparkles} title="You're all caught up" subtitle="No issues flagged for you right now. New flags will appear here as the agent finds them." />
-        ) : (
-          myIssues.map((i) => <IssueCard key={i.id} issue={i} />)
-        )}
+        {(() => {
+          const open = myIssues.filter((i) => !i.status || i.status === "open" || i.status === "reassigned");
+          const working = myIssues.filter((i) => i.status === "working");
+          const resolved = myIssues.filter((i) => i.status === "resolved");
+          const visible = open.length + working.length + resolved.length;
+          return (
+            <>
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                {open.length} issues flagged for you
+              </h2>
+              {visible === 0 ? (
+                <EmptyState icon={Sparkles} title="You're all caught up" subtitle="No issues flagged for you right now. New flags will appear here as the agent finds them." />
+              ) : (
+                <div className="space-y-5">
+                  {open.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-semibold text-foreground mb-2.5 flex items-baseline gap-2">
+                        Open
+                        <span className="text-muted-foreground font-medium tabular-nums">· {open.length}</span>
+                      </h3>
+                      {open.map((i) => <IssueCard key={i.id} issue={i} />)}
+                    </div>
+                  )}
+                  {working.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-semibold text-foreground mb-2.5 flex items-baseline gap-2">
+                        In progress
+                        <span className="text-muted-foreground font-medium tabular-nums">· {working.length}</span>
+                      </h3>
+                      {working.map((i) => <IssueCard key={i.id} issue={i} />)}
+                    </div>
+                  )}
+                  {resolved.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-semibold text-foreground mb-2.5 flex items-baseline gap-2">
+                        Resolved
+                        <span className="text-muted-foreground font-medium tabular-nums">· {resolved.length}</span>
+                      </h3>
+                      {resolved.map((i) => <IssueCard key={i.id} issue={i} />)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </section>
     </>
   );

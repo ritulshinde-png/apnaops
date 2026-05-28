@@ -124,11 +124,11 @@ function TrendChart({ points, statValue, unit, breakdown }: ChartProps) {
       ? `${linePath} L ${fx(points.length - 1).toFixed(2)} ${H - padBottom} L ${fx(0).toFixed(2)} ${H - padBottom} Z`
       : "";
 
-  // Tick density: aim for ~6 labels with a minimum stride of every-alternate.
+  // Tick density: up to 7 points → label every point; more → aim for ~6 labels (every alternate min).
   const tickIndices = new Set<number>();
   tickIndices.add(0);
   if (points.length > 1) tickIndices.add(points.length - 1);
-  const step = Math.max(2, Math.ceil(points.length / 6));
+  const step = points.length <= 7 ? 1 : Math.max(2, Math.ceil(points.length / 6));
   for (let i = step; i < points.length - 1; i += step) tickIndices.add(i);
 
   const showValueLabels = points.length <= 15;
@@ -186,11 +186,11 @@ function TrendChart({ points, statValue, unit, breakdown }: ChartProps) {
             </text>
           ))}
 
-        {/* Value labels above each dot */}
+        {/* Value labels above each dot, with a card-colored halo so the trendline doesn't cross the text */}
         {showValueLabels &&
           points.map((p, i) => {
             const px = fx(i);
-            const py = fy(p.v) - 6;
+            const py = fy(p.v) - 8;
             return (
               <text
                 key={`val-${i}`}
@@ -198,6 +198,10 @@ function TrendChart({ points, statValue, unit, breakdown }: ChartProps) {
                 y={py}
                 textAnchor="middle"
                 fontSize="9"
+                paintOrder="stroke"
+                stroke="var(--card)"
+                strokeWidth="3"
+                strokeLinejoin="round"
                 className="fill-foreground"
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
