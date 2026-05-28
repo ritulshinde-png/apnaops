@@ -163,6 +163,7 @@ export interface MyActionEntry {
   text: string;
   meta?: string;
   issueId?: string;
+  actor?: string;
 }
 
 export interface DashFilters {

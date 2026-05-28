@@ -36,12 +36,12 @@ export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, cu
 
   return (
     <Card className="p-4 flex flex-col gap-3 min-w-0">
-      <p className="text-xs text-muted-foreground font-medium truncate">{name}</p>
+      <p className="text-sm font-semibold text-foreground truncate">{name}</p>
       <TrendChart points={points} statValue={statValue} unit={def.unit} breakdown={breakdown} />
       <div className="flex items-center justify-between border-t -mx-4 px-3 pt-2 -mb-1">
         <Select value={statType} onValueChange={(v) => setStatType(v as StatType)}>
           <SelectTrigger
-            className="h-7 text-xs gap-1 border-0 shadow-none px-1.5 hover:bg-accent focus:ring-0 focus:ring-offset-0 w-auto [&>svg]:opacity-60"
+            className="h-7 text-sm font-semibold text-foreground gap-1 border-0 shadow-none px-1.5 hover:bg-accent focus:ring-0 focus:ring-offset-0 w-auto [&>svg]:opacity-60"
           >
             <SelectValue />
           </SelectTrigger>
@@ -53,7 +53,7 @@ export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, cu
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm font-semibold tabular-nums">
+        <span className="text-xs font-medium text-foreground tabular-nums">
           {statValue.toFixed(1)}
           {def.unit}
         </span>
@@ -124,11 +124,15 @@ function TrendChart({ points, statValue, unit, breakdown }: ChartProps) {
       ? `${linePath} L ${fx(points.length - 1).toFixed(2)} ${H - padBottom} L ${fx(0).toFixed(2)} ${H - padBottom} Z`
       : "";
 
-  // Tick density: up to 7 points → label every point; more → aim for ~6 labels (every alternate min).
+  // Tick density: estimate per-label width and drop to every-Nth as soon as
+  // adjacent labels would visually overlap. ~5px per char for the 9px font + 4px buffer.
+  const sampleLabel = points.length ? formatTickShort(points[0].t, breakdown) : "";
+  const labelPx = Math.max(28, sampleLabel.length * 5.4 + 4);
+  const gap = points.length > 1 ? (w - 2 * padX) / (points.length - 1) : Infinity;
+  const step = gap >= labelPx ? 1 : Math.max(1, Math.ceil(labelPx / gap));
   const tickIndices = new Set<number>();
   tickIndices.add(0);
   if (points.length > 1) tickIndices.add(points.length - 1);
-  const step = points.length <= 7 ? 1 : Math.max(2, Math.ceil(points.length / 6));
   for (let i = step; i < points.length - 1; i += step) tickIndices.add(i);
 
   const showValueLabels = points.length <= 15;

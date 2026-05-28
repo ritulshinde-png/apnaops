@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, useCurrentUser } from "@/lib/store";
 import { nowTs } from "@/lib/utils";
 import type { Issue } from "@/lib/types";
 
@@ -31,6 +31,8 @@ export function IssueActionDialog({ open, onClose, action, issue }: { open: bool
   const updateIssue = useAppStore((s) => s.updateIssue);
   const users = useAppStore((s) => s.users);
   const addAction = useAppStore((s) => s.addAction);
+  const currentUser = useCurrentUser();
+  const actor = currentUser?.name || "User";
   const [note, setNote] = React.useState("");
   const [eta, setEta] = React.useState("");
   const [fix, setFix] = React.useState(issue.fix);
@@ -54,24 +56,25 @@ export function IssueActionDialog({ open, onClose, action, issue }: { open: bool
     const locName = issue.locId;
     if (action === "working") {
       if (!eta) { alert("Pick an expected ETA."); return; }
-      updateIssue(issue.id, { status: "working" });
-      addAction({ ts, kind: "issue", text: `Working on it · ${issue.metric} at ${locName}`, meta: `ETA: ${eta}${note ? " · " + note.slice(0, 60) : ""}`, issueId: issue.id });
+      updateIssue(issue.id, { status: "working", updatedAt: ts });
+      addAction({ ts, kind: "working", actor, text: `Working on it · ${issue.metric} at ${locName}`, meta: `ETA: ${eta}${note ? " · " + note.slice(0, 60) : ""}`, issueId: issue.id });
     } else if (action === "resolved") {
       if (!fix.trim()) { alert("Please describe how you fixed it."); return; }
-      updateIssue(issue.id, { status: "resolved" });
-      addAction({ ts, kind: "resolved", text: `Resolved · ${issue.metric} at ${locName}`, meta: `Rule Book: ${rb} · ${fix.slice(0, 80)}`, issueId: issue.id });
+      updateIssue(issue.id, { status: "resolved", updatedAt: ts });
+      addAction({ ts, kind: "resolved", actor, text: `Resolved · ${issue.metric} at ${locName}`, meta: `Rule Book: ${rb} · ${fix.slice(0, 80)}`, issueId: issue.id });
     } else if (action === "rejected") {
       if (!why.trim()) { alert("Please tell the agent why this is not an issue."); return; }
-      updateIssue(issue.id, { status: "rejected" });
-      addAction({ ts, kind: "rejected", text: `Marked not-an-issue · ${issue.metric} at ${locName}`, meta: `Scope: ${stopScope} · ${why.slice(0, 80)}`, issueId: issue.id });
+      updateIssue(issue.id, { status: "rejected", updatedAt: ts });
+      addAction({ ts, kind: "rejected", actor, text: `Marked not-an-issue · ${issue.metric} at ${locName}`, meta: `Scope: ${stopScope} · ${why.slice(0, 80)}`, issueId: issue.id });
     } else if (action === "reassign") {
       if (assignees.length === 0) { alert("Add at least one assignee."); return; }
       const old = issue.owner;
       const next = assignees.join(", ");
-      updateIssue(issue.id, { status: "reassigned", owner: next });
+      updateIssue(issue.id, { status: "reassigned", owner: next, updatedAt: ts });
       addAction({
         ts,
         kind: "reassigned",
+        actor,
         text: `Reassigned ${issue.metric} at ${locName} → ${next}`,
         meta: `was: ${old}${reason ? " · " + reason.slice(0, 60) : ""}`,
         issueId: issue.id,
@@ -79,11 +82,11 @@ export function IssueActionDialog({ open, onClose, action, issue }: { open: bool
     } else if (action === "editRca") {
       const lines = rcaText.split("\n").map((l) => l.trim()).filter(Boolean);
       const hypotheses = lines.map((l) => { const parts = l.split("·").map((s) => s.trim()); return { h: parts[0] || l, c: parseFloat(parts[1]) || 0.5 }; });
-      updateIssue(issue.id, { hypotheses });
-      addAction({ ts, kind: "editrca", text: `Edited RCA · ${issue.metric} at ${locName}`, meta: `${hypotheses.length} hypotheses · sent to Rule Book editor`, issueId: issue.id });
+      updateIssue(issue.id, { hypotheses, updatedAt: ts });
+      addAction({ ts, kind: "editrca", actor, text: `Edited RCA · ${issue.metric} at ${locName}`, meta: `${hypotheses.length} hypotheses · sent to Rule Book editor`, issueId: issue.id });
     } else if (action === "editFix") {
-      updateIssue(issue.id, { fix });
-      addAction({ ts, kind: "editfix", text: `Edited fix · ${issue.metric} at ${locName}`, meta: `Rule Book: ${fixRb}`, issueId: issue.id });
+      updateIssue(issue.id, { fix, updatedAt: ts });
+      addAction({ ts, kind: "editfix", actor, text: `Edited fix · ${issue.metric} at ${locName}`, meta: `Rule Book: ${fixRb}`, issueId: issue.id });
     }
     onClose();
   }

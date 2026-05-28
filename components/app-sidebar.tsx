@@ -91,10 +91,10 @@ export function AppSidebar() {
         }}
         className={cn(
           "fixed top-0 left-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col z-50 px-1.5 py-3 transition-[width] duration-300 ease-in-out",
-          isOpen ? "w-60" : "w-14 cursor-pointer"
+          isOpen ? "w-60" : "w-12 cursor-pointer"
         )}
       >
-        <div className="flex items-center pl-3 pr-2 py-2 font-bold text-foreground">
+        <div className="flex items-center pl-[9px] pr-2 py-2 font-bold text-foreground">
           <Zap className="h-5 w-5 text-primary shrink-0" />
           <RevealText isOpen={isOpen} className="text-base tracking-tight">Apnaops</RevealText>
         </div>
@@ -133,7 +133,7 @@ export function AppSidebar() {
         <button
           type="button"
           onClick={() => setIsOpen((v) => !v)}
-          className="relative flex items-center rounded-md text-sm font-medium leading-5 transition-colors group pl-3 pr-2 py-2 mb-2 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+          className="relative flex items-center rounded-md text-sm font-medium leading-5 transition-colors group pl-[9px] pr-2 py-2 mb-2 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
           aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           <span className="relative shrink-0 h-[18px] w-[18px]">
@@ -144,7 +144,7 @@ export function AppSidebar() {
           {!isOpen && <CollapsedTooltip label="Expand" />}
         </button>
 
-        <div className="flex items-center pt-3 pl-2 pr-2 border-t border-sidebar-border">
+        <div className="flex items-center pt-3 pl-1 pr-2 border-t border-sidebar-border">
           <Avatar className="h-7 w-7 shrink-0">
             <AvatarFallback className="text-[10px] font-semibold bg-gradient-to-br from-primary to-accent-foreground text-white">{initials}</AvatarFallback>
           </Avatar>
@@ -208,7 +208,7 @@ function NavLink({ href, label, Icon, isOpen, active, badge = 0 }: {
       onClick={() => setSuppressTooltip(true)}
       onMouseLeave={() => setSuppressTooltip(false)}
       className={cn(
-        "relative flex items-center rounded-md text-sm font-medium leading-5 transition-colors group pl-3 pr-2 py-2",
+        "relative flex items-center rounded-md text-sm font-medium leading-5 transition-colors group pl-[9px] pr-2 py-2",
         active
           ? "bg-primary text-primary-foreground font-semibold"
           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary"
@@ -258,7 +258,7 @@ function SectionLabel({ isOpen, label, chip, first }: { isOpen: boolean; label: 
       />
       <span
         className={cn(
-          "relative overflow-hidden whitespace-nowrap pl-3 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold transition-all duration-300 ease-in-out flex items-center",
+          "relative overflow-hidden whitespace-nowrap pl-[9px] text-[10px] uppercase tracking-widest text-muted-foreground font-semibold transition-all duration-300 ease-in-out flex items-center",
           isOpen ? "max-w-[240px] opacity-100" : "max-w-0 opacity-0"
         )}
       >
@@ -282,19 +282,19 @@ function measureLabelPx(label: string): number {
 
 function CollapsedTooltip({ label, suppress }: { label: string; suppress?: boolean }) {
   const w = React.useMemo(
-    () => Math.max(56, measureLabelPx(label) + 34), // 34 = px-[17px] both sides
+    () => Math.max(46, measureLabelPx(label) + 28), // 14px effective padding each side
     [label]
   );
 
-  // Figma path uses 80-wide reference. Substitute the right-edge coordinates so the
-  // shape stretches to fit any label width while keeping the arrow + rounded corners
+  // Figma path (Frame 2) — reference width 79. Substitute the right-edge coordinates so
+  // the shape stretches to fit any label while keeping the arrow + rounded corners
   // pixel-identical to the design.
   const path =
-    `M${w - 6} 2H12.2038C9.21787 2 6.68635 4.19558 6.26408 7.15147` +
-    `L6.10876 8.23871C6.03875 8.72875 5.7895 9.17541 5.40923 9.49231` +
-    `L0.921865 13.2318C0.442111 13.6316 0.44211 14.3684 0.921865 14.7682` +
-    `L5.40922 18.5077C5.7895 18.8246 6.03875 19.2712 6.10876 19.7613` +
-    `L6.26408 20.8485C6.68635 23.8044 9.21787 26 12.2038 26H${w - 6}` +
+    `M${w - 6} 2H12.4536C9.46224 2 6.92786 4.20333 6.51186 7.16557` +
+    `L6.36483 8.21254C6.2938 8.71826 6.03202 9.17766 5.63313 9.49655` +
+    `L0.977006 13.2189C0.476255 13.6193 0.476255 14.3807 0.977006 14.7811` +
+    `L5.63313 18.5035C6.03202 18.8223 6.2938 19.2817 6.36483 19.7875` +
+    `L6.51186 20.8344C6.92786 23.7967 9.46224 26 12.4536 26H${w - 6}` +
     `C${w - 2.6863} 26 ${w} 23.3137 ${w} 20V8C${w} 4.68629 ${w - 2.6863} 2 ${w - 6} 2Z`;
 
   return (
@@ -314,7 +314,7 @@ function CollapsedTooltip({ label, suppress }: { label: string; suppress?: boole
       >
         <path d={path} fill="currentColor" />
       </svg>
-      <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center h-7 px-[17px] text-background text-[12px] font-medium">
+      <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center h-7 px-[14px] text-background text-[12px] font-medium">
         {label}
       </span>
     </span>

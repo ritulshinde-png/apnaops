@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <main className="ml-14 px-6 md:px-10 py-8 max-w-screen-2xl">{children}</main>
+      <main className="ml-12 px-6 md:px-10 py-8 max-w-screen-2xl">{children}</main>
     </div>
   );
 }

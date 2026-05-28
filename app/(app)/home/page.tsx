@@ -38,10 +38,10 @@ function useISTClock() {
 
 function getGreeting(now: Date) {
   const hour = Number(now.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }));
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 16) return "Good afternoon";
-  if (hour >= 16 && hour < 22) return "Good evening";
-  return "Good night";
+  if (hour >= 5 && hour < 12) return "Good Morning";
+  if (hour >= 12 && hour < 16) return "Good Afternoon";
+  if (hour >= 16 && hour < 22) return "Good Evening";
+  return "Good Night";
 }
 
 function ISTClock({ now }: { now: Date }) {
@@ -247,12 +247,13 @@ export default function HomePage() {
     setCustomDialogOpen(false);
   }
 
-  const myIssues = (() => {
-    const visible = issues.filter((i) => i.severity !== "ok");
-    if (user.accessLevel === "owner" || user.accessLevel === "admin") return visible;
+  // Scope an arbitrary list of issues to the current user's role + geo. Used for
+  // both the "issues flagged for you" feed and the "improvements" recap below it.
+  const scopeForUser = React.useCallback((list: typeof issues) => {
+    if (user.accessLevel === "owner" || user.accessLevel === "admin") return list;
     const role = roles.find((r) => r.name === user.role);
     const owned = new Set(role?.metrics || []);
-    return visible.filter((i) => {
+    return list.filter((i) => {
       const inMetrics = owned.has(i.metric) || METRIC_KEYS.some((k) => k.ownerName === i.metric && owned.has(k.ownerName));
       if (!inMetrics) return false;
       if (user.geoType === "Global" || !user.geoType) return true;
@@ -264,7 +265,10 @@ export default function HomePage() {
       };
       return matches(i.locId);
     });
-  })();
+  }, [user, roles, locations]);
+
+  const myIssues = scopeForUser(issues.filter((i) => i.severity !== "ok"));
+  const myImprovements = scopeForUser(issues.filter((i) => i.severity === "ok"));
 
   const todaysStandups = standups.filter((s) => s.attendees.includes(user.id) && isStandupToday(s));
   const pendingStandups = todaysStandups.filter((s) => getStandupStatus(s).kind !== "over").length;
@@ -284,12 +288,17 @@ export default function HomePage() {
   const userLocData = data[user.geoType === "City" ? "JH_ranchi" : "global"] || data.global || {};
 
   const stores = Object.keys(locations).filter((id) => locations[id].type === "Store").length;
-  const subtitle = `${user.role || user.accessLevel} · ${user.geoType || "Global"} · ${stores} stores`;
+  const subtitle = `${user.geoType || "Global"} · ${stores} stores`;
 
   return (
     <>
       <PageHeader
-        title={`${getGreeting(now)}, ${user.name.split(" ")[0]}`}
+        title={
+          <>
+            <span className="whitespace-nowrap">{getGreeting(now)},</span>{" "}
+            <span className="whitespace-nowrap">{user.name.split(" ")[0]}</span>
+          </>
+        }
         subtitle={subtitle}
         rightBlock={<ISTClock now={now} />}
       />
@@ -439,6 +448,17 @@ export default function HomePage() {
           );
         })()}
       </section>
+
+      {myImprovements.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            {myImprovements.length} improvement{myImprovements.length === 1 ? "" : "s"}
+          </h2>
+          {myImprovements.map((i) => (
+            <IssueCard key={i.id} issue={i} variant="improvement" />
+          ))}
+        </section>
+      )}
     </>
   );
 }
