@@ -106,8 +106,11 @@ export function IssueCard({ issue, readonly = false, variant = "issue" }: Props)
       )}
       <Card className="overflow-hidden p-0 relative z-10">
         <header className="px-5 pt-4 pb-3.5 border-b space-y-1">
-          {/* Line 1: metric name · value | right: 📍 location */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Line 1: metric name · value | right: 📍 location.
+              gap-x-3 keeps a clear horizontal gutter when both fit on one line;
+              gap-y-0.5 keeps the wrap-to-next-line distance tight, so the location
+              chip doesn't drop too far below the metric value. */}
+          <div className="flex items-center justify-between gap-x-3 gap-y-0.5 flex-wrap">
             <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
               <h3 className="text-[15px] font-semibold leading-snug">{issue.metric}</h3>
               <Dot />
@@ -220,13 +223,18 @@ export function IssueCard({ issue, readonly = false, variant = "issue" }: Props)
         {/* Action row — only on the issues variant */}
         {!readonly && !isImprovement && (
           <div className="px-5 py-3 bg-muted/40 border-t flex items-center gap-2 flex-wrap">
-            <Button size="sm" className="h-8 text-xs" onClick={() => setActionOpen("working")}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs bg-card border-primary text-primary hover:bg-primary/10 hover:text-primary"
+              onClick={() => setActionOpen("working")}
+            >
               Working on it
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 hover:text-emerald-700"
+              className="h-8 text-xs bg-card border-emerald-500 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700"
               onClick={() => setActionOpen("resolved")}
             >
               Resolved

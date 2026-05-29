@@ -111,7 +111,7 @@ export const useAppStore = create<AppState>()(
       data: buildMetricData(),
       reloadData: () => set({ data: buildMetricData(), dashboard: { lastReloaded: nowTs(), reloadLockUntil: Date.now() + 60 * 60 * 1000 } }),
       dashboard: { lastReloaded: null, reloadLockUntil: 0 },
-      dashFilters: { metric: "all", dateRange: "7d", breakdown: "daily", myMetrics: false, search: "", sortBy: null, statusFilter: "all" },
+      dashFilters: { metric: "all", metricsSet: null, dateRange: "last7", breakdown: "daily", customRange: null, myMetrics: true, search: "", sortBy: null, statusFilter: "all" },
       setDashFilter: (k, v) => set((st) => ({ dashFilters: { ...st.dashFilters, [k]: v } })),
       expanded: { global: true, JH: true, JH_ranchi: true },
       toggleLocation: (locId) => set((st) => ({ expanded: { ...st.expanded, [locId]: !st.expanded[locId] } })),

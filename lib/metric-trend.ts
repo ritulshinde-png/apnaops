@@ -25,7 +25,7 @@ export const BREAKDOWN_OPTIONS: { value: Breakdown; label: string }[] = [
 const PRESET_ALLOWED: Record<Exclude<TimeRange, "custom">, Breakdown[]> = {
   today: ["hourly", "daily"],
   yesterday: ["hourly", "daily"],
-  last7: ["hourly", "daily", "weekly"],
+  last7: ["hourly", "daily"],
   last30: ["daily", "weekly"],
   last90: ["daily", "weekly"],
 };

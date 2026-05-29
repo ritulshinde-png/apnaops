@@ -168,8 +168,10 @@ export interface MyActionEntry {
 
 export interface DashFilters {
   metric: string;
+  metricsSet: string[] | null;
   dateRange: string;
   breakdown: string;
+  customRange: { startIso: string; endIso: string } | null;
   myMetrics: boolean;
   search: string;
   sortBy: { key: string; dir: "asc" | "desc" } | null;

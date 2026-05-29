@@ -23,9 +23,12 @@ interface Props {
   range: TimeRange;
   breakdown: Breakdown;
   custom?: CustomRange | null;
+  /** When true, the in-card name header is hidden — useful inside a Dialog whose
+   *  own title already names the metric (no point in showing it twice). */
+  hideName?: boolean;
 }
 
-export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, custom }: Props) {
+export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, custom, hideName = false }: Props) {
   const [statType, setStatType] = React.useState<StatType>("avg");
   const points = React.useMemo(
     () => generateTrend(name, range, breakdown, baseline, amp, custom),
@@ -36,7 +39,7 @@ export function MetricTrendCard({ name, def, baseline, amp, range, breakdown, cu
 
   return (
     <Card className="p-4 flex flex-col gap-3 min-w-0">
-      <p className="text-sm font-semibold text-foreground truncate">{name}</p>
+      {!hideName && <p className="text-sm font-semibold text-foreground truncate">{name}</p>}
       <TrendChart points={points} statValue={statValue} unit={def.unit} breakdown={breakdown} />
       <div className="flex items-center justify-between border-t -mx-4 px-3 pt-2 -mb-1">
         <Select value={statType} onValueChange={(v) => setStatType(v as StatType)}>
