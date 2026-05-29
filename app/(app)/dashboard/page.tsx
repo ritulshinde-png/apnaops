@@ -316,17 +316,34 @@ export default function DashboardPage() {
         <tr
           style={{ height: 52 }}
           className={cn(
-            "border-b transition-colors [&>td]:border-r [&>td]:border-border/40 [&>td:last-child]:border-r-0",
+            // Newly-mounted rows fade + slide in. Tuned to ~500ms so the drop
+            // visibly cascades when a parent is expanded; when a parent is
+            // collapsed the rows simply unmount (no exit animation), keeping
+            // the close action snappy.
+            "border-b transition-colors animate-in fade-in-0 slide-in-from-top-4 duration-500 ease-out",
+            "[&>td]:border-r [&>td]:border-border/40 [&>td:last-child]:border-r-0",
             rowTint
           )}
         >
           <td
             className="px-3 py-2 border-l-4 text-left"
-            style={{ paddingLeft: 10 + depth * 12, borderLeftColor: leftEdgeColor }}
+            style={{
+              // Non-leaf rows (Global, states, cities) keep depth-based indent.
+              // Leaf rows (stores) align their bullet with the *first letter* of
+              // their parent's name — parent's text starts at parent-padding +
+              // chevron-width (12) + gap (4) = 10 + (parent_depth)*12 + 16, which
+              // for a leaf at `depth` simplifies to 26 + (depth-1)*12. That makes
+              // the dotted list visibly nested under its city.
+              paddingLeft: hasChildren ? 10 + depth * 12 : 26 + (depth - 1) * 12,
+              borderLeftColor: leftEdgeColor,
+            }}
           >
             <button
               className={cn(
-                "inline-flex items-center gap-1 text-xs font-medium",
+                // Browser default for <button> is `text-align: center`. Override
+                // so that wrapped store names keep every line flush-left under
+                // the bullet, instead of centering the trailing line.
+                "inline-flex items-start gap-1 text-xs font-medium text-left",
                 hasChildren && "cursor-pointer"
               )}
               onClick={() => hasChildren && toggleLocation(locId)}
